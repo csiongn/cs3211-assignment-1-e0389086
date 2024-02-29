@@ -20,10 +20,10 @@ struct Order
 	uint32_t price;
 	uint32_t count;
 	CommandType type; // Buy or Sell
-	std::string instrument;
+	const char* instrument;
 	intmax_t timestamp;
 
-	Order(uint32_t oid, uint32_t p, uint32_t c, CommandType t, const std::string& is)
+	Order(uint32_t oid, uint32_t p, uint32_t c, CommandType t, const char* is)
 	: order_id(oid), price(p), count(c), type(t), instrument(is), // Use atomic counter for timestamp
 	  timestamp(global_timestamp_counter.fetch_add(1, std::memory_order_relaxed)) {}
 
