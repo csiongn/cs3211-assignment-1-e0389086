@@ -123,12 +123,7 @@ void Engine::connection_thread(ClientConnection connection) {
 
             // New order. Create and try to match
             Order newOrder(cmd.order_id, cmd.price, cmd.count, cmd.type, cmd.instrument);
-
-            // Find or create the order book for this instrument
-            std::unique_lock lock(booksMutex);
-            auto& book = books[cmd.instrument];
             book.matchOrder(newOrder);
-            lock.unlock();
 
             if (newOrder.count > 0) {  // Not fully matched, add to order book
                 book.addOrder(std::move(newOrder));
