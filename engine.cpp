@@ -107,9 +107,6 @@ void Engine::connection_thread(ClientConnection connection) {
             return;  // Exit the thread on error or EOF
         }
 
-        // Use timestamp for operation
-        auto timestamp = getCurrentTimestamp();
-
         if (cmd.type == input_cancel) {
             // Assume cancelation request
             // Find the appropriate order book and try to cancel the order
@@ -121,14 +118,12 @@ void Engine::connection_thread(ClientConnection connection) {
             // Find or create the order book for this instrument
             std::unique_lock lock(booksMutex);
             auto& book = books[cmd.instrument];
+            book.matchOrder(newOrder);
             lock.unlock();
-
-            auto matchedOrders = book.matchOrder(newOrder);
-            // Process matched orders and output results
 
             if (newOrder.count > 0) {  // Not fully matched, add to order book
                 book.addOrder(std::move(newOrder));
-                Output::OrderAdded(cmd.order_id, cmd.instrument, cmd.price, cmd.count, cmd.type == input_sell, timestamp);
+                Output::OrderAdded(cmd.order_id, cmd.instrument, cmd.price, newOrder.count, cmd.type == input_sell, getCurrentTimestamp());
             }
         }
     }
