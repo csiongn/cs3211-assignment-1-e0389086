@@ -48,6 +48,9 @@ std::vector<Order> OrderBook::matchOrder(Order& active_order) {
             active_order.count -= trade_count;
             it->count -= trade_count;
 
+            Output::OrderExecuted(it->order_id, active_order.order_id, 1, it->price,
+                    trade_count, getCurrentTimestamp());
+
             // If a resting order is fully matched, move to matched vector
             if (it->count == 0) {
                 matched.push_back(std::move(*it));
@@ -73,6 +76,7 @@ void OrderBook::cancelOrder(uint32_t order_id) {
         auto it = std::find_if(buyOrders.begin(), buyOrders.end(), [order_id](const Order& o) { return o.order_id == order_id; });
         if (it != buyOrders.end()) {
             buyOrders.erase(it);
+            Output::OrderDeleted(order_id, true, getCurrentTimestamp());
             return; // Order found and erased
         }
     }
@@ -81,10 +85,12 @@ void OrderBook::cancelOrder(uint32_t order_id) {
         auto it = std::find_if(sellOrders.begin(), sellOrders.end(), [order_id](const Order& o) { return o.order_id == order_id; });
         if (it != sellOrders.end()) {
             sellOrders.erase(it);
+            Output::OrderDeleted(order_id, true, getCurrentTimestamp());
             return; // Order found and erased
         }
     }
     // If order is not found in either side, it may be due to it having been executed or never existed.
+    Output::OrderDeleted(order_id, false, getCurrentTimestamp());
 }
 
 void Engine::accept(ClientConnection connection) {
