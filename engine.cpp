@@ -34,12 +34,14 @@ void OrderBook::add_buy_order(Order&& order) {
     auto it = std::lower_bound(buyOrders.begin(), buyOrders.end(), order,
         [](const Order& a, const Order& b) { return a.price > b.price || (a.price == b.price && a.timestamp < b.timestamp); });
     buyOrders.insert(it, std::move(order));
+    Output::OrderAdded(order.order_id, order.instrument, order.price, order.count, false, order.timestamp);
 }
 
 void OrderBook::add_sell_order(Order&& order) {
     auto it = std::lower_bound(sellOrders.begin(), sellOrders.end(), order,
         [](const Order& a, const Order& b) { return a.price < b.price || (a.price == b.price && a.timestamp < b.timestamp); });
     sellOrders.insert(it, std::move(order));
+    Output::OrderAdded(order.order_id, order.instrument, order.price, order.count, true, order.timestamp);
 }
 
 std::vector<Order> OrderBook::matchOrder(Order& active_order) {
