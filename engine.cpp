@@ -115,7 +115,9 @@ void Engine::connection_thread(ClientConnection connection) {
         if (cmd.type == input_cancel) {
             // Assume cancelation request
             // Find the appropriate order book and try to cancel the order
-            // Output result using Output::OrderDeleted
+            auto instrument = orderInstrument[cmd.order_id];
+            auto& book = books[instrument];
+            book.cancelOrder(cmd.order_id);
         } else {
             // Find or create the order book for this instrument
             auto& book = books[cmd.instrument];
@@ -127,7 +129,7 @@ void Engine::connection_thread(ClientConnection connection) {
 
             if (newOrder.count > 0) {  // Not fully matched, add to order book
                 book.addOrder(std::move(newOrder));
-                Output::OrderAdded(cmd.order_id, cmd.instrument, cmd.price, newOrder.count, cmd.type == input_sell, getCurrentTimestamp());
+                orderInstrument[newOrder.order_id] = newOrder.instrument;
             }
         }
     }

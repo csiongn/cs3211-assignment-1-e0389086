@@ -58,6 +58,7 @@ public:
 private:
 	void connection_thread(ClientConnection conn);
 	std::map<std::string, OrderBook> books; // One order book per instrument
+	std::map<uint32_t, std::string> orderInstrument; // Instrument for each order id
 	mutable std::shared_mutex booksMutex;
 };
 
