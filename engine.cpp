@@ -9,8 +9,16 @@ inline intmax_t getCurrentTimestamp() {
 }
 
 bool Order::operator<(const Order& other) const {
-	return this->timestamp < other.timestamp ||
-		   (this->timestamp == other.timestamp && this->price < other.price);
+    if (this->type == CommandType::input_buy) {
+        return this->price > other.price ||
+            (this->price == other.price && this->timestamp < other.timestamp);
+    }
+
+    if (this->type == CommandType::input_sell) {
+        return this->price < other.price ||
+            (this->price == other.price && this->timestamp < other.timestamp);
+    }
+    throw std::runtime_error("Invalid order type");
 }
 
 // OrderBook functions
