@@ -31,21 +31,18 @@ void OrderBook::addOrder(Order&& order) {
 }
 
 void OrderBook::add_buy_order(Order&& order) {
-    std::unique_lock lock(buyMutex);
     auto it = std::lower_bound(buyOrders.begin(), buyOrders.end(), order,
         [](const Order& a, const Order& b) { return a.price > b.price || (a.price == b.price && a.timestamp < b.timestamp); });
     buyOrders.insert(it, std::move(order));
 }
 
 void OrderBook::add_sell_order(Order&& order) {
-    std::unique_lock lock(sellMutex);
     auto it = std::lower_bound(sellOrders.begin(), sellOrders.end(), order,
         [](const Order& a, const Order& b) { return a.price < b.price || (a.price == b.price && a.timestamp < b.timestamp); });
     sellOrders.insert(it, std::move(order));
 }
 
 std::vector<Order> OrderBook::matchOrder(Order& active_order) {
-    std::scoped_lock lock(active_order.type == input_sell ? buyMutex : sellMutex);
     std::vector<Order>& resting_orders = (active_order.type == input_sell) ? buyOrders : sellOrders;
     std::vector<Order> matched;
 
@@ -80,7 +77,7 @@ std::vector<Order> OrderBook::matchOrder(Order& active_order) {
 
 void OrderBook::cancelOrder(uint32_t order_id) {
     { // Attempt to cancel from buyOrders first
-        std::unique_lock lock(buyMutex);
+        std::unique_lock lock(mutex);
         auto it = std::find_if(buyOrders.begin(), buyOrders.end(), [order_id](const Order& o) { return o.order_id == order_id; });
         if (it != buyOrders.end()) {
             buyOrders.erase(it);
@@ -89,7 +86,7 @@ void OrderBook::cancelOrder(uint32_t order_id) {
         }
     }
     { // Attempt to cancel from sellOrders
-        std::unique_lock lock(sellMutex);
+        std::unique_lock lock(mutex);
         auto it = std::find_if(sellOrders.begin(), sellOrders.end(), [order_id](const Order& o) { return o.order_id == order_id; });
         if (it != sellOrders.end()) {
             sellOrders.erase(it);
@@ -120,6 +117,10 @@ void Engine::connection_thread(ClientConnection connection) {
             // Find the appropriate order book and try to cancel the order
             // Output result using Output::OrderDeleted
         } else {
+            // Find or create the order book for this instrument
+            auto& book = books[cmd.instrument];
+            std::unique_lock lock(book.mutex);
+
             // New order. Create and try to match
             Order newOrder(cmd.order_id, cmd.price, cmd.count, cmd.type, cmd.instrument);
 

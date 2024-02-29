@@ -34,6 +34,9 @@ struct Order
 class OrderBook
 {
 public:
+	// Mutexes for concurrent access
+	mutable std::mutex mutex;
+
 	void addOrder(Order&& order);
 	std::vector<Order> matchOrder(Order& order);
 	void cancelOrder(uint32_t order_id);
@@ -42,14 +45,8 @@ private:
 	std::vector<Order> buyOrders;
 	std::vector<Order> sellOrders;
 
-	// Mutexes for concurrent access
-	mutable std::shared_mutex buyMutex;
-	mutable std::shared_mutex sellMutex;
-
 	void add_buy_order(Order&& order);
 	void add_sell_order(Order&& order);
-	std::vector<Order> match_buy_order(Order& order);
-	std::vector<Order> match_sell_order(Order& order);
 };
 
 struct Engine
